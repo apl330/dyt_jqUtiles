@@ -39,6 +39,7 @@
 					isMobilePh  : function(obj){
 						return $.dyt.validator.common(reg_mobil_phone, obj);
 					},
+					//家用电话
 					isPhone     : function(obj){
 						return $.dyt.validator.common(reg_phone, obj);
 					},
@@ -77,28 +78,72 @@
 	
 	
 	/** ---------------这里的.warn需要重构----------------* */
-	$.fn.dyt_required = function(prompt){
+	
+	/**
+	 *　@param　boolean required　是否必须
+	 *  @param　string req_prompt　表单为空时的提示语
+	 *  @param　string url ajax查询的地址
+	 *  @param string key json数据的key,　如{key : value}
+	 *  @param string exist_prompt 已存在时的提示语
+	 *  @author zjzhai
+	 */
+	$.fn.dyt_required_exist = function(options ){
+		var settings = $.extend({
+			required   : false,
+			req_prompt : "不能为空",
+			url        : null,
+			key        : "",
+			exist_prompt : "已存在"
+		},  options || {});
+		
 		return this.blur(function(e){
-			$(e.target).next(".warn").remove();
-			if(!$.trim(e.target.value)){
-				$(e.target).after($.dyt.commons.create_WarnDiv("warn", prompt));
+			var value = $.trim(e.target.value);
+			var data = $.parseJSON( '{"'+settings.key+'":"'+value+'"}');
+			
+			if(!	value){
+				if(settings.required){
+					$(e.target).next(".warn").remove();
+					$(e.target).after($.dyt.commons.create_WarnDiv("warn",settings.req_prompt ));
+				}
+			}else{
+				$.ajax({
+					  type   : 'POST',
+					  url    : settings.url,
+					  data   : data,
+					  success: function(data){
+						  $(e.target).next(".warn").remove();
+							if(data.exist){
+								$('<div></div>').attr("class","warn").html(settings.exist_prompt).insertAfter(e.target);
+							}
+					  },
+					 dataType: 'json'
+					});
 			}
 		});
 	};
 	
 	// 只能为实数
-	$.fn.dyt_isFPositive = function(prompt){
-		this.blur(function(e){
+	$.fn.dyt_isFPositive = function(prompt, options){
+		
+		var settings = $.extend({
+			required : false,
+		  prompt2	 : "内容不能为空"
+		}, options || {});
+		
+		return this.blur(function(e){
 			$(e.target).next(".warn").remove();
 			if($.trim(e.target.value)){
 				if(!$.dyt.validator.isFPositive(e.target.value)){
 					$(e.target).after($.dyt.commons.create_WarnDiv("warn", prompt));
 					$(e.target).attr("value","");
 				}
+			}else{
+				if(settings.required){
+					$(e.target).after($.dyt.commons.create_WarnDiv("warn", settings.prompt2));
+				}
 			}
 		});
 		
-		return this;
 	};
 	
 	// 两数之间
@@ -114,6 +159,32 @@
 		});
 		return this;
 	};
+	
+	//电话
+	$.fn.dyt_isPhone = function(prompt, options){
+		var settings = $.extend({
+			required : false,
+		  prompt2	 : "内容不能为空"
+		}, options || {});
+		
+		return this.blur(function(e){
+			$(e.target).next(".warn").remove();
+			if($.trim(e.target.value)){
+				if(!$.dyt.validator.reg_mobil_phone(e.target.value) || !$.dyt.validator.reg_phone(e.target.value) ){
+					$(e.target).after($.dyt.commons.create_WarnDiv("warn", prompt));
+					$(e.target).attr("value","");
+				}
+			}else{
+				if(settings.required){
+					$(e.target).after($.dyt.commons.create_WarnDiv("warn", settings.prompt2));
+				}
+			}
+		});
+		
+	};
+	
+	
+	
 	
 })(jQuery);
 
